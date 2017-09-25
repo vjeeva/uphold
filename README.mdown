@@ -140,10 +140,14 @@ Each config is in YAML format, and is constructed of a transport, an engine and 
         access_key_id: your-access-key-id
         secret_access_key: your-secret-access-key
         bucket: your-backups
-        path: mongodb/systemx/{date}
-        filename: mongodb.tar
-        date_format: '%Y.%m.%d'
-        date_offset: 0
+        path: mongodb/systemx/{date0}
+        filename: mongodb_{date1}.tar
+        dates:
+         - date_format: '%Y.%m.%d'
+           date_offset: 0
+         - date_format: '%Y%m%d'
+           date_offset: 0
+         # ... add as many as needed
         folder_within: mongodb/databases/MongoDB
     tests:
       - test_structure.rb

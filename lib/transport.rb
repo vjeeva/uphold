@@ -11,10 +11,13 @@ module Uphold
       @filename = params[:filename]
       @folder_within = params[:folder_within]
 
-      @date_format = params[:date_format] || '%Y-%m-%d'
-      @date_offset = params[:date_offset] || 0
-      @path.gsub!('{date}', (Date.today - @date_offset).strftime(@date_format))
-      @filename.gsub!('{date}', (Date.today - @date_offset).strftime(@date_format))
+      @dates.each do |date_settings, index|
+        date_format = date_settings[:date_format] || '%Y-%m-%d'
+        date_offset = date_settings[:date_offset] || 0
+        @path.gsub!('{date' + index  + '}', (Date.today - date_offset).strftime(date_format))
+        @filename.gsub!('{date' + index  + '}', (Date.today - date_offset).strftime(date_format))
+      end
+
     end
 
     def fetch
