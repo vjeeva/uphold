@@ -99,7 +99,7 @@ Create a global config in `/etc/uphold/uphold.yml` (even if you leave it empty),
   * Generally only overridden in development on OSX when you need to mount your own src directory
 * `docker_url` (default: `unix:///var/run/docker.sock`)
   * If you connect to Docker via a TCP socket instead of a Unix one, then you would supply `tcp://example.com:5422` instead (untested)
-* `docker_container` (default: `forward3d/uphold-tester`)
+* `docker_container` (default: `vjeeva/uphold-tester`)
   * If you need to customize the docker container and use a different one, you can override it here
 * `docker_tag` (default: `latest`)
   * Can override the Docker container tag if you want to run from a specific version
@@ -116,7 +116,7 @@ If you change the global config you will need to restart the UI docker container
     config_path: /etc/uphold
     docker_log_path: /var/log/uphold
     docker_url: unix:///var/run/docker.sock
-    docker_container: forward3d/uphold-tester
+    docker_container: vjeeva/uphold-tester
     docker_tag: latest
     docker_mounts:
       - /var/my_backups
@@ -357,14 +357,14 @@ Obviously this is just a simple test, but you can write any number of tests you 
 
 Once you have finished your configuration, to get the system running you only need to start the Docker container called 'uphold-ui'.
 
-    docker pull forward3d/uphold-ui:latest
+    docker pull vjeeva/uphold-ui:latest
     docker run \
       --rm \
       -p 8079:8079 \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v /etc/uphold:/etc/uphold \
       -v /var/log/uphold:/var/log/uphold \
-      forward3d/uphold-ui:latest
+      vjeeva/uphold-ui:latest
 
 * You must make sure that you mount in the `docker.sock` from wherever it resides.
 * Feel free to change the port number if you don't want it to start up on port 8079.
