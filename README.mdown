@@ -308,7 +308,7 @@ Unless you need to change any of the defaults, a standard configuration for Mong
 
 ###### Full `postgresql` Engine Example
 
-The `database` also becomes your username for when you run the tests.
+You can specify the username for accessing the postgres server (other than the default `postgres`) for when you run the tests. Furthermore, you can specify the file type to be `sql` or `dump`. If `sql`, then the restore will be done with the `psql` command, which takes a `.sql` file. If `dump`, then the restore will be done with the `pg_restore` command, which takes a `.pg_dump` file (usually, or whatever file is obtained using the pg_dump command).
 
     engine:
       type: postgresql
@@ -316,8 +316,10 @@ The `database` also becomes your username for when you run the tests.
         database: your_database_name
         docker_image: postgres
         docker_tag: 9.5.0
+        file_type: sql
         port: 5432
         sql_file: PostgreSQL.sql
+        username: postgres
 
 #### Tests
 
