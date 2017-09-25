@@ -18,7 +18,7 @@ module Uphold
           if @file_type.contains("sql")
             run_command("psql --no-password --set ON_ERROR_STOP=on --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
           elsif @file_type.contains("dump")
-             run_command("pg_restore --no-password --set ON_ERROR_STOP=on --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")i
+             run_command("pg_restore --no-password --set ON_ERROR_STOP=on --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
           else
             raise 'File Type parameter in Postgresql Driver is invalid.'
           end
