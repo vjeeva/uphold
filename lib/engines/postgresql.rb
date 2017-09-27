@@ -11,6 +11,12 @@ module Uphold
         @port ||= 5432
         @username ||= 'postgres'
         @sql_file = params[:sql_file] ||  'PostgreSQL.sql'
+
+        @dates.each do |date_settings, index|
+	  date_format = date_settings[:date_format] || '%Y-%m-%d'
+	  date_offset = date_settings[:date_offset] || 0
+	  @sql_file.gsub!('{date' + index  + '}', (Date.today - date_offset).strftime(date_format))
+	end
       end
 
       def load_backup(path)
