@@ -10,6 +10,7 @@ module Uphold
       @path = params[:path]
       @filename = params[:filename]
       @folder_within = params[:folder_within]
+      @dates = params[:dates]
 
       @dates.each do |date_settings, index|
         date_format = date_settings[:date_format] || '%Y-%m-%d'
