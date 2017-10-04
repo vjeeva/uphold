@@ -17,10 +17,16 @@ module Uphold
         File.open(File.join(@tmpdir, File.basename(matching_file)), 'wb') do |file|
           logger.info "Downloading '#{matching_file}' from S3 bucket #{@bucket}"
           s3.get_object({ bucket: @bucket, key: matching_file }, target: file)
-          decompress(file) do |_b|
+          if @compressed
+	    decompress(file) do |_b|
+            end
           end
+	end
+        if @compressed  
+	  File.join(@tmpdir, @folder_within)
+        else
+          @tmpdir
         end
-        File.join(@tmpdir, @folder_within)
       end
     end
   end
