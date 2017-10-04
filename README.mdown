@@ -183,6 +183,8 @@ Transports all inherit these generic parameters...
   * When using dates the code starts at `Date.today` and then subtracts this number, so for checking a backup that exists for yesterday, you would enter `1`
 * `folder_within`
   * Once your backup has been decompressed it may have folders inside, if so, you need to provide where the last directory is, this generally can't be programmatically found as some database backups may contain folders in their own structure.
+* `compressed`
+  * Specify if your path leads to an compressed archive with a boolean value (`true` or `false`).
 
 ##### S3 (type: `s3`)
 

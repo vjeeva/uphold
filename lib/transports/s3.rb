@@ -18,12 +18,12 @@ module Uphold
           logger.info "Downloading '#{matching_file}' from S3 bucket #{@bucket}"
           s3.get_object({ bucket: @bucket, key: matching_file }, target: file)
           if @compressed
-	    decompress(file) do |_b|
+            decompress(file) do |_b|
             end
           end
-	end
+	      end
         if @compressed  
-	  File.join(@tmpdir, @folder_within)
+	        File.join(@tmpdir, @folder_within)
         else
           @tmpdir
         end
