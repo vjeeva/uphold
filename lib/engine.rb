@@ -47,6 +47,7 @@ module Uphold
         Docker::Image.create('fromImage' => @docker_image, 'tag' => @docker_tag)
       end
 
+      logger.debug @docker_image + ":" + @docker_tag
       @container = Docker::Container.create(
         'Image' => "#{@docker_image}:#{@docker_tag}",
         'Env' => @docker_env

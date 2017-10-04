@@ -8,9 +8,9 @@
     <tr>
       <td class="config_name"><%= c[:name] %> <a class="run" href="run/<%= c[:file] %>"></a></td>
       <td>
-        <% unless @logs[c[:name]].nil? %>
+        <% unless @logs[c[:file]].nil? %>
         <ul>
-          <% @logs[c[:name]].each do |log| %>
+          <% @logs[c[:file]].each do |log| %>
             <li>
               <a title="<%= log[:state] %>" class="<%= log[:state] %>" href="logs/<%= log[:filename] %>"></a> <%= epoch_to_datetime(log[:epoch]) %>
             </li>

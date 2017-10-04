@@ -99,7 +99,7 @@ Create a global config in `/etc/uphold/uphold.yml` (even if you leave it empty),
   * Generally only overridden in development on OSX when you need to mount your own src directory
 * `docker_url` (default: `unix:///var/run/docker.sock`)
   * If you connect to Docker via a TCP socket instead of a Unix one, then you would supply `tcp://example.com:5422` instead (untested)
-* `docker_container` (default: `forward3d/uphold-tester`)
+* `docker_container` (default: `vjeeva/uphold-tester`)
   * If you need to customize the docker container and use a different one, you can override it here
 * `docker_tag` (default: `latest`)
   * Can override the Docker container tag if you want to run from a specific version
@@ -116,7 +116,7 @@ If you change the global config you will need to restart the UI docker container
     config_path: /etc/uphold
     docker_log_path: /var/log/uphold
     docker_url: unix:///var/run/docker.sock
-    docker_container: forward3d/uphold-tester
+    docker_container: vjeeva/uphold-tester
     docker_tag: latest
     docker_mounts:
       - /var/my_backups
@@ -140,10 +140,14 @@ Each config is in YAML format, and is constructed of a transport, an engine and 
         access_key_id: your-access-key-id
         secret_access_key: your-secret-access-key
         bucket: your-backups
-        path: mongodb/systemx/{date}
-        filename: mongodb.tar
-        date_format: '%Y.%m.%d'
-        date_offset: 0
+        path: mongodb/systemx/{date0}
+        filename: mongodb_{date1}.tar
+        dates:
+         - date_format: '%Y.%m.%d'
+           date_offset: 0
+         - date_format: '%Y%m%d'
+           date_offset: 0
+         # ... add as many as needed
         folder_within: mongodb/databases/MongoDB
     tests:
       - test_structure.rb
@@ -179,6 +183,8 @@ Transports all inherit these generic parameters...
   * When using dates the code starts at `Date.today` and then subtracts this number, so for checking a backup that exists for yesterday, you would enter `1`
 * `folder_within`
   * Once your backup has been decompressed it may have folders inside, if so, you need to provide where the last directory is, this generally can't be programmatically found as some database backups may contain folders in their own structure.
+* `compressed`
+  * Specify if your path leads to an compressed archive with a boolean value (`true` or `false`).
 
 ##### S3 (type: `s3`)
 
@@ -308,7 +314,7 @@ Unless you need to change any of the defaults, a standard configuration for Mong
 
 ###### Full `postgresql` Engine Example
 
-The `database` also becomes your username for when you run the tests.
+You can specify the username for accessing the postgres server (other than the default `postgres`) for when you run the tests. Furthermore, you can specify the file type to be `sql` or `dump`. If `sql`, then the restore will be done with the `psql` command, which takes a `.sql` file. If `dump`, then the restore will be done with the `pg_restore` command, which takes a `.pg_dump` file (usually, or whatever file is obtained using the pg_dump command).
 
     engine:
       type: postgresql
@@ -316,8 +322,10 @@ The `database` also becomes your username for when you run the tests.
         database: your_database_name
         docker_image: postgres
         docker_tag: 9.5.0
+        file_type: sql
         port: 5432
         sql_file: PostgreSQL.sql
+        username: postgres
 
 #### Tests
 
@@ -351,14 +359,14 @@ Obviously this is just a simple test, but you can write any number of tests you 
 
 Once you have finished your configuration, to get the system running you only need to start the Docker container called 'uphold-ui'.
 
-    docker pull forward3d/uphold-ui:latest
+    docker pull vjeeva/uphold-ui:latest
     docker run \
       --rm \
       -p 8079:8079 \
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v /etc/uphold:/etc/uphold \
       -v /var/log/uphold:/var/log/uphold \
-      forward3d/uphold-ui:latest
+      vjeeva/uphold-ui:latest
 
 * You must make sure that you mount in the `docker.sock` from wherever it resides.
 * Feel free to change the port number if you don't want it to start up on port 8079.
