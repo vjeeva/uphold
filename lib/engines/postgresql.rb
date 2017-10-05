@@ -14,11 +14,11 @@ module Uphold
         @dates = params[:dates]
 
         @dates.each_with_index do |date_settings, index|
-	  date_format = date_settings[:date_format] || '%Y-%m-%d'
-	  date_offset = date_settings[:date_offset] || 0
-	  date_string = '{date' + index.to_s + '}'
-	  @sql_file.gsub!(date_string, (Date.today - date_offset).strftime(date_format))
-	end
+	        date_format = date_settings[:date_format] || '%Y-%m-%d'
+	        date_string = '{date' + index.to_s + '}'
+          date = DateTime.strptime(ENV['TARGET_DATE'].to_s, '%s')
+          @sql_file.gsub!(date_string, date.strftime(date_format))
+	      end
       end
 
       def load_backup(path)
