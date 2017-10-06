@@ -28,7 +28,11 @@ module Uphold
 
     get '/' do
       @logs = logs
-      @backups = Files.backups(@configs)
+      @backups = Uphold::Files.backups(@configs[0])
+      dates = []
+      @backups.each do |backup|
+        dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
+      end
       erb :index
     end
 
@@ -102,10 +106,10 @@ module Uphold
 
     def logs
       logs = {}
-      @files.raw_test_logs.each do |log|
+      Uphold::Files.raw_test_logs.each do |log|
         epoch = log.split('_')[0]
         config = log.split('_')[1].gsub!('.log', '')
-        state = @files.raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
+        state = Uphold::Files.raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
         if state
           state = state.gsub("#{epoch}_#{config}", '')[1..-1]
         else

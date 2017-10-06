@@ -1,5 +1,5 @@
 module Uphold
-  class DateHelper
+  module DateHelper
 
     def posix_date_regex_dict
       dict = Hash.new
@@ -142,6 +142,13 @@ module Uphold
         end
       end
       regex
+    end
+
+    def get_date_from_string(string, posix)
+      regex = regex_from_posix(posix)
+      date = DateTime.strptime(string.match(regex).to_s, posix)
+      string.sub!(regex, '') # Consume it
+      date
     end
 
   end
