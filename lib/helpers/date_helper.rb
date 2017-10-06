@@ -1,7 +1,7 @@
 module Uphold
   module DateHelper
 
-    def posix_date_regex_dict
+    def self.posix_date_regex_dict
       dict = Hash.new
       #  %%     a literal %
       dict['%%'] = /(%)/
@@ -119,9 +119,11 @@ module Uphold
       dict
     end
 
-    def regex_from_posix(posix)
+    def self.regex_from_posix(posix_param)
 
       regex = nil
+
+      posix = posix_param.clone
 
       while posix.length > 0
         if posix[0] == '%'
@@ -144,7 +146,7 @@ module Uphold
       regex
     end
 
-    def get_date_from_string(string, posix)
+    def self.get_date_from_string(string, posix)
       regex = regex_from_posix(posix)
       date = DateTime.strptime(string.match(regex).to_s, posix)
       string.sub!(regex, '') # Consume it
