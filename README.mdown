@@ -319,7 +319,7 @@ You can specify the username for accessing the postgres server (other than the d
         database: your_database_name
         docker_image: postgres
         docker_tag: 9.5.0
-        file_type: sql
+        extension: .sql
         port: 5432
         sql_file: PostgreSQL.sql
         username: postgres

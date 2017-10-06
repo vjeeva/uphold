@@ -24,10 +24,13 @@ module Uphold
       Config.load_engines
       Config.load_transports
       @configs = Config.load_configs
+      @files = Files.new(@configs)
+      logger.debug @files.backups
     end
 
     get '/' do
       @logs = logs
+      @backups = @files.backups
       erb :index
     end
 
@@ -90,10 +93,10 @@ module Uphold
       end
 
       @container = Docker::Container.create(
-        'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
-        'Cmd' => [slug + '.yml'],
-        'Volumes' => volumes,
-        'Env' => ["UPHOLD_LOG_FILENAME=#{Time.now.to_i}_#{slug}", "TARGET_DATE=1507075200"]
+          'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
+          'Cmd' => [slug + '.yml'],
+          'Volumes' => volumes,
+          'Env' => ["UPHOLD_LOG_FILENAME=#{Time.now.to_i}_#{slug}", "TARGET_DATE=1507075200"]
       )
 
       @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
@@ -101,10 +104,10 @@ module Uphold
 
     def logs
       logs = {}
-      raw_test_logs.each do |log|
+      @files.raw_test_logs.each do |log|
         epoch = log.split('_')[0]
         config = log.split('_')[1].gsub!('.log', '')
-        state = raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
+        state = @files.raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
         if state
           state = state.gsub("#{epoch}_#{config}", '')[1..-1]
         else
@@ -117,16 +120,5 @@ module Uphold
       logs
     end
 
-    def raw_test_logs
-      raw_files.select { |file| File.extname(file) == '.log' }
-    end
-
-    def raw_state_files
-      raw_files.select { |file| File.extname(file) == '' }
-    end
-
-    def raw_files
-      Dir[File.join('/var/log/uphold', '*')].select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
-    end
   end
 end
