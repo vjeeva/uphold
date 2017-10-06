@@ -24,13 +24,11 @@ module Uphold
       Config.load_engines
       Config.load_transports
       @configs = Config.load_configs
-      @files = Files.new(@configs)
-      logger.debug @files.backups
     end
 
     get '/' do
       @logs = logs
-      @backups = @files.backups
+      @backups = Files.backups(@configs)
       erb :index
     end
 
