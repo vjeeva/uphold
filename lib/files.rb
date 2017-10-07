@@ -36,15 +36,12 @@ module Uphold
       # Iterate through each date setting, with an array, then for every date setting you find the corresponding
       # date placement and then parse it back to DateTime.
       # For now, fuck zips and their internals.
-      latest = nil
       dates = []
       path_local = path.clone
       config[:transport][:settings][:dates].each do |date|
         dates << DateHelper.get_date_from_string(path_local, date[:date_format].to_s)
       end
-
       dates.max
-
     end
 
   end

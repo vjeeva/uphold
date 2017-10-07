@@ -19,9 +19,14 @@ module Uphold
         Time.at(epoch).utc.to_datetime.strftime(UPHOLD[:ui_datetime])
       end
 
-      def dateTime_to_UI_Format(datetime)
+      def datetime_to_UI_Format(datetime)
         datetime.strftime(UPHOLD[:ui_datetime])
       end
+
+      def datetime_to_epoch(datetime)
+        datetime.strftime('%s')
+      end
+
     end
 
     before do
@@ -45,7 +50,11 @@ module Uphold
       start_docker_container(params[:slug], @dates.max.strftime('%s'))
       redirect '/'
     end
-    
+
+    get '/run/:slug/:date_epoch' do
+      start_docker_container(params[:slug], params[:date_epoch])
+      redirect '/'
+    end
 
     get '/logs/:filename' do
       @log = File.join('/var/log/uphold', params[:filename])

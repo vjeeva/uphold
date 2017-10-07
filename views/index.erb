@@ -17,7 +17,7 @@
             </li>
             <% else %>
             <li>
-              <a title="not_run" class="not_run" href=""></a> <%= dateTime_to_UI_Format(backup[:date]) %>
+              <a title="not_run" class="not_run" href="/run/<%= c[:config_file] %>/<%= datetime_to_epoch(backup[:date]) %>"></a> <%= datetime_to_UI_Format(backup[:date]) %>
             </li>
             <% end %>
           <% end %>
