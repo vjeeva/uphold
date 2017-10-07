@@ -14,6 +14,7 @@ module Uphold
       @timeout = params[:timeout] || 10
       @container = nil
       @port = nil
+      @extension = params[:extension]
     end
 
     def load(path:)
@@ -47,7 +48,6 @@ module Uphold
         Docker::Image.create('fromImage' => @docker_image, 'tag' => @docker_tag)
       end
 
-      logger.debug @docker_image + ":" + @docker_tag
       @container = Docker::Container.create(
         'Image' => "#{@docker_image}:#{@docker_tag}",
         'Env' => @docker_env
@@ -82,6 +82,14 @@ module Uphold
       logger.debug "Docker container '#{container_name}' stopping"
       @container.stop
       @container.delete
+    end
+
+    def get_backups
+      if @files == nil
+        raise error("Engine did not initialize files!")
+        exit 1
+      end
+      @files.get_backups
     end
 
   end

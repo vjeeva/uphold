@@ -144,9 +144,7 @@ Each config is in YAML format, and is constructed of a transport, an engine and 
         filename: mongodb_{date1}.tar
         dates:
          - date_format: '%Y.%m.%d'
-           date_offset: 0
          - date_format: '%Y%m%d'
-           date_offset: 0
          # ... add as many as needed
         folder_within: mongodb/databases/MongoDB
     tests:
@@ -221,7 +219,6 @@ As the `path` is sent to the S3 API as a prefix, it will match all folders, the 
         path: mongodb/systemx/{date}
         filename: mongodb.tar
         date_format: '%Y.%m.%d'
-        date_offset: 0
         folder_within: mongodb/databases/MongoDB
 
 ##### Local File (type: `local`)
@@ -322,7 +319,7 @@ You can specify the username for accessing the postgres server (other than the d
         database: your_database_name
         docker_image: postgres
         docker_tag: 9.5.0
-        file_type: sql
+        extension: .sql
         port: 5432
         sql_file: PostgreSQL.sql
         username: postgres

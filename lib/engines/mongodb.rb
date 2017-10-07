@@ -7,6 +7,8 @@ module Uphold
         @docker_image ||= 'mongo'
         @docker_tag ||= '3.2.1'
         @port ||= 27_017
+        params[:extension] = @extension
+        @files = Files.new(params)
       end
 
       def load_backup(path)

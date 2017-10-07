@@ -18,6 +18,15 @@ module Uphold
       def epoch_to_datetime(epoch)
         Time.at(epoch).utc.to_datetime.strftime(UPHOLD[:ui_datetime])
       end
+
+      def datetime_to_UI_Format(datetime)
+        datetime.strftime(UPHOLD[:ui_datetime])
+      end
+
+      def datetime_to_epoch(datetime)
+        datetime.strftime('%s')
+      end
+
     end
 
     before do
@@ -27,12 +36,23 @@ module Uphold
     end
 
     get '/' do
-      @logs = logs
+      @data = backups_with_logs
+      logger.debug @data
       erb :index
     end
 
     get '/run/:slug' do
-      start_docker_container(params[:slug])
+      @backups = Uphold::Files.backups(@configs[0])
+      @dates = []
+      @backups.each do |backup|
+        @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
+      end
+      start_docker_container(params[:slug], @dates.max.strftime('%s'))
+      redirect '/'
+    end
+
+    get '/run/:slug/:date_epoch' do
+      start_docker_container(params[:slug], params[:date_epoch])
       redirect '/'
     end
 
@@ -42,7 +62,13 @@ module Uphold
     end
 
     post '/api/1.0/backup' do
-      start_docker_container(params[:name])
+      # Doubled? Try to make more efficient
+      @backups = Uphold::Files.backups(@configs[0])
+      @dates = []
+      @backups.each do |backup|
+        @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
+      end
+      start_docker_container(params[:name], @dates.max)
       200
     end
 
@@ -69,7 +95,7 @@ module Uphold
 
     private
 
-    def start_docker_container(slug)
+    def start_docker_container(slug, timestamp)
       if Docker::Image.exist?("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
         Docker::Image.get("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
       else
@@ -90,10 +116,10 @@ module Uphold
       end
 
       @container = Docker::Container.create(
-        'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
-        'Cmd' => [slug + '.yml'],
-        'Volumes' => volumes,
-        'Env' => ["UPHOLD_LOG_FILENAME=#{Time.now.to_i}_#{slug}"]
+          'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
+          'Cmd' => [slug + '.yml'],
+          'Volumes' => volumes,
+          'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{slug}", "TARGET_DATE=#{timestamp}"]
       )
 
       @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
@@ -101,10 +127,10 @@ module Uphold
 
     def logs
       logs = {}
-      raw_test_logs.each do |log|
+      Uphold::Files.raw_test_logs.each do |log|
         epoch = log.split('_')[0]
         config = log.split('_')[1].gsub!('.log', '')
-        state = raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
+        state = Uphold::Files.raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
         if state
           state = state.gsub("#{epoch}_#{config}", '')[1..-1]
         else
@@ -117,16 +143,31 @@ module Uphold
       logs
     end
 
-    def raw_test_logs
-      raw_files.select { |file| File.extname(file) == '.log' }
+    def backups_with_logs
+      log_backup_matchups_all = []
+      @configs.each do |config|
+        backup_paths = Uphold::Files.backups(config)
+        logss = logs[config[:file]]
+        backups = []
+        backup_paths.each do |path|
+          backup = {}
+          backup[:date] = Files.extract_datetime_from_backup_path(config, path)
+          backup[:backup] = path
+          logss.each do |log|
+            if log[:epoch].to_s == backup[:date].strftime('%s').to_s
+              backup[:log] = log
+            end
+          end
+          backups << backup
+        end
+        curr_config = {}
+        curr_config[:config_file] = config[:file]
+        curr_config[:config_name] = config[:name]
+        curr_config[:backups] = backups
+        log_backup_matchups_all << curr_config
+      end
+      log_backup_matchups_all
     end
 
-    def raw_state_files
-      raw_files.select { |file| File.extname(file) == '' }
-    end
-
-    def raw_files
-      Dir[File.join('/var/log/uphold', '*')].select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
-    end
   end
 end
