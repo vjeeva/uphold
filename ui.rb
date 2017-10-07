@@ -29,15 +29,22 @@ module Uphold
     get '/' do
       @logs = logs
       @backups = Uphold::Files.backups(@configs[0])
-      dates = []
+      @dates = []
       @backups.each do |backup|
-        dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
+        @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
       end
+      logger.debug @dates.max
       erb :index
     end
 
     get '/run/:slug' do
-      start_docker_container(params[:slug])
+      @backups = Uphold::Files.backups(@configs[0])
+      @dates = []
+      @backups.each do |backup|
+        @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
+      end
+      logger
+      start_docker_container(params[:slug], @dates.max.strftime('%s'))
       redirect '/'
     end
 
@@ -47,7 +54,13 @@ module Uphold
     end
 
     post '/api/1.0/backup' do
-      start_docker_container(params[:name])
+      # Doubled? Try to make more efficient
+      @backups = Uphold::Files.backups(@configs[0])
+      @dates = []
+      @backups.each do |backup|
+        @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
+      end
+      start_docker_container(params[:name], @dates.max)
       200
     end
 
@@ -74,7 +87,7 @@ module Uphold
 
     private
 
-    def start_docker_container(slug)
+    def start_docker_container(slug, timestamp)
       if Docker::Image.exist?("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
         Docker::Image.get("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
       else
@@ -98,7 +111,7 @@ module Uphold
           'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
           'Cmd' => [slug + '.yml'],
           'Volumes' => volumes,
-          'Env' => ["UPHOLD_LOG_FILENAME=#{Time.now.to_i}_#{slug}", "TARGET_DATE=1507075200"]
+          'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{slug}", "TARGET_DATE=#{timestamp}"]
       )
 
       @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })

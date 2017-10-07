@@ -20,15 +20,14 @@ module Uphold
           @sql_file.gsub!(date_string, date.strftime(date_format))
         end
         params[:extension] = @extension
-        @files = Files.new(params)
       end
 
       def load_backup(path)
         Dir.chdir(path) do
           if @extension.include?(".sql")
-            run_command("psql --no-password --set ON_ERROR_STOP=on --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
+            run_command("psql --no-password --exit-on-error --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
           elsif @extension.include?(".pg_dump")
-             run_command("pg_restore --no-password --set ON_ERROR_STOP=on --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
+             run_command("pg_restore --no-password --exit-on-error --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
           else
             raise 'File Type parameter in Postgresql Driver is invalid.'
           end
