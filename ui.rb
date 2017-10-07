@@ -18,6 +18,10 @@ module Uphold
       def epoch_to_datetime(epoch)
         Time.at(epoch).utc.to_datetime.strftime(UPHOLD[:ui_datetime])
       end
+
+      def dateTime_to_UI_Format(datetime)
+        datetime.strftime(UPHOLD[:ui_datetime])
+      end
     end
 
     before do
@@ -27,13 +31,8 @@ module Uphold
     end
 
     get '/' do
-      @logs = logs
-      @backups = Uphold::Files.backups(@configs[0])
-      @dates = []
-      @backups.each do |backup|
-        @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
-      end
-      logger.debug @dates.max
+      @data = backups_with_logs
+      logger.debug @data
       erb :index
     end
 
@@ -43,10 +42,10 @@ module Uphold
       @backups.each do |backup|
         @dates << Files.extract_datetime_from_backup_path(@configs[0], backup)
       end
-      logger
       start_docker_container(params[:slug], @dates.max.strftime('%s'))
       redirect '/'
     end
+    
 
     get '/logs/:filename' do
       @log = File.join('/var/log/uphold', params[:filename])
@@ -133,6 +132,32 @@ module Uphold
         logs[config].sort_by! { |h| h[:epoch].to_i }.reverse!
       end
       logs
+    end
+
+    def backups_with_logs
+      log_backup_matchups_all = []
+      @configs.each do |config|
+        backup_paths = Uphold::Files.backups(config)
+        logss = logs[config[:file]]
+        backups = []
+        backup_paths.each do |path|
+          backup = {}
+          backup[:date] = Files.extract_datetime_from_backup_path(config, path)
+          backup[:backup] = path
+          logss.each do |log|
+            if log[:epoch].to_s == backup[:date].strftime('%s').to_s
+              backup[:log] = log
+            end
+          end
+          backups << backup
+        end
+        curr_config = {}
+        curr_config[:config_file] = config[:file]
+        curr_config[:config_name] = config[:name]
+        curr_config[:backups] = backups
+        log_backup_matchups_all << curr_config
+      end
+      log_backup_matchups_all
     end
 
   end
