@@ -7,7 +7,7 @@ module Uphold
         @docker_image ||= 'postgres'
         @docker_tag ||= '9.5'
         @extension ||= '.sql'
-        @restore_type ||= 'psql'
+        @restore_type params[:@restore_type] || 'psql'
         @port ||= 5432
         @username = params[:username] || 'postgres'
         @docker_env ||= ["POSTGRES_USER=#{@username}", "POSTGRES_DB=#{@database}"]
@@ -26,7 +26,7 @@ module Uphold
       def load_backup(path)
         Dir.chdir(path) do
           if @restore_type.include?("psql")
-            run_command("psql --no-password --exit-on-error --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
+            run_command("psql --no-password --set ON_ERROR_STOP=on --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
           elsif @restore_type.include?("pg_restore")
              run_command("pg_restore --no-password --exit-on-error --username=#{@username} --host=#{container_ip_address} --port=#{@port} --dbname=#{@database} < #{@sql_file}")
           else
