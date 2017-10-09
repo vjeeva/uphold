@@ -7,7 +7,7 @@ module Uphold
         @docker_image ||= 'postgres'
         @docker_tag ||= '9.5'
         @extension ||= '.sql'
-        @restore_type params[:@restore_type] || 'psql'
+        @restore_type = params[:@restore_type] || 'psql'
         @port ||= 5432
         @username = params[:username] || 'postgres'
         @docker_env ||= ["POSTGRES_USER=#{@username}", "POSTGRES_DB=#{@database}"]
