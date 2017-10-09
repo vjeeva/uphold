@@ -153,9 +153,11 @@ module Uphold
           backup = {}
           backup[:date] = Files.extract_datetime_from_backup_path(config, path)
           backup[:backup] = path
-          logss.each do |log|
-            if log[:epoch].to_s == backup[:date].strftime('%s').to_s
-              backup[:log] = log
+          if logss != nil
+            logss.each do |log|
+              if log[:epoch].to_s == backup[:date].strftime('%s').to_s
+                backup[:log] = log
+              end
             end
           end
           backups << backup
