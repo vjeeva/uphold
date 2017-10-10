@@ -2,3 +2,4 @@ run_remote.sh
 docker_clean.sh
 build_n_push.sh
 .idea/
+ec2-configs/
