@@ -2,7 +2,6 @@ source 'https://rubygems.org'
 
 gem 'sequel',     '~> 4.30'
 gem 'docker-api', '~> 1.33.2'
-gem 'aws-sdk', '~> 2.2', '>= 2.2.12'
 
 group :tester do
   # core
@@ -17,13 +16,19 @@ group :tester do
   gem 'sqlite3',   '~> 1.3', '>= 1.3.11'
 
   # transports
+  gem 'aws-sdk', '~> 2.2', '>= 2.2.12'
 end
 
 group :ui do
   gem 'sinatra', '~> 1.4', '>= 1.4.6'
   gem 'thin', '~> 1.6', '>= 1.6.4'
+  gem 'aws-sdk', '~> 2.2', '>= 2.2.12'
 end
 
 group :development do
   gem 'git-up'
+end
+
+group :dispatcher do
+
 end
