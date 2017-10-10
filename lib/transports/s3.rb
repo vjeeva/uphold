@@ -15,7 +15,9 @@ module Uphold
       def fetch_backup
         s3 = Aws::S3::Client.new(region: @region, access_key_id: @access_key_id, secret_access_key: @secret_access_key)
         matching_prefix = s3.list_objects(bucket: @bucket, max_keys: 10, prefix: @path).contents.collect(&:key)
+        logger.debug @filename
         matching_file = matching_prefix.find { |s3_file| File.fnmatch(@filename, File.basename(s3_file)) }
+        logger.debug matching_file
 
         File.open(File.join(@tmpdir, File.basename(matching_file)), 'wb') do |file|
           logger.info "Downloading '#{matching_file}' from S3 bucket #{@bucket}"
@@ -47,7 +49,7 @@ module Uphold
         # Objective of any transport is to get the paths of relevant backups given the general path directory
         # and the regexes to match with. Here, we first get all paths in the general directory
         s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
-        paths = s3.list_objects(bucket: bucket, prefix: general_path).contents.collect(&:key)
+        paths = s3.list_objects(bucket: bucket, prefix: general_path).contents.select{|item| item.storage_class != 'GLACIER'}.collect(&:key)
 
         # Now, we filter the paths we got above with the regexes from dates
         Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
