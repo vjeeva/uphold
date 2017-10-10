@@ -37,7 +37,6 @@ module Uphold
 
     get '/' do
       @data = backups_with_logs
-      logger.debug @data
       erb :index
     end
 
