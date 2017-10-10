@@ -6,16 +6,7 @@ module Uphold
 
     def self.backups(config)
       # Fuck me this assumes uncompressed...
-      path = config[:transport][:settings][:path]
-      if path.include? '{date'
-        index = path.index('{date') # 0 based index
-        general_path = '/mount' + path[0..index-1]
-        backup_paths = []
-        Find.find(general_path) do |path|
-          backup_paths << path.gsub!('/mount', '') if path.include? "#{config[:engine][:settings][:extension]}"
-        end
-        backup_paths
-      end
+      config[:transport][:klass].get_backup_paths(config)
     end
 
     def self.raw_test_logs
@@ -42,6 +33,39 @@ module Uphold
         dates << DateHelper.get_date_from_string(path_local, date[:date_format].to_s)
       end
       dates.max
+    end
+
+    def self.get_general_path(config, prefix)
+      path = config[:transport][:settings][:path]
+      general_path = path.clone
+      if general_path.include? '{date'
+        index = path.index('{date') # 0 based index
+        general_path = prefix + path[0..index-1]
+      end
+      general_path
+    end
+
+    def self.get_date_regexes_from_config(config)
+      regexes = []
+      config[:transport][:settings][:dates].each do |date|
+        # GOT IT: Need to stop removing {dateX} because there are outliers in the s3 bucket that don't conform. Need
+        # better verification. Instead of this crap, sub in the dates with a regex!!!! THATS WHAT ITS FOR OMG LOL
+        date_format = date[:date_format] || '%Y-%m-%d'
+        regexes << DateHelper.regex_from_posix(date_format).to_s
+      end
+      regexes
+    end
+
+    def self.get_paths_matching_regexes(paths, regexes, extension)
+      paths_local = paths.clone
+      regexes.each do |regex|
+        paths_selected = []
+        paths_local.each do |path|
+          paths_selected << path if path.match(regex) and path.include? extension
+        end
+        paths_local = paths_selected
+      end
+      paths_local
     end
 
   end

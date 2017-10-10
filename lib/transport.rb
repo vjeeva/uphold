@@ -48,5 +48,9 @@ module Uphold
     def fetch_backup
       fail "Your transport must implement the 'fetch' method"
     end
+
+    def get_backup_paths
+      fail "Your transport must implement the 'get_backup_paths' method"
+    end
   end
 end

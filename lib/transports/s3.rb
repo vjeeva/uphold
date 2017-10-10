@@ -1,6 +1,9 @@
 module Uphold
   module Transports
     class S3 < Transport
+      require 'aws-sdk'
+      include DateHelper
+
       def initialize(params)
         super(params)
         @region = params[:region]
@@ -27,6 +30,27 @@ module Uphold
         else
           @tmpdir
         end
+      end
+
+      def self.get_backup_paths(config)
+        region = config[:transport][:settings][:region]
+        access_key_id = config[:transport][:settings][:access_key_id]
+        secret_access_key = config[:transport][:settings][:secret_access_key]
+        bucket = config[:transport][:settings][:bucket]
+
+        # Regexes from dates in config
+        regexes = Uphold::Files.get_date_regexes_from_config(config)
+
+        # Top level folder path (without dates)
+        general_path = Uphold::Files.get_general_path(config, '') # Ensure to pass empty string for no prefix
+
+        # Objective of any transport is to get the paths of relevant backups given the general path directory
+        # and the regexes to match with. Here, we first get all paths in the general directory
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        paths = s3.list_objects(bucket: bucket, prefix: general_path).contents.collect(&:key)
+
+        # Now, we filter the paths we got above with the regexes from dates
+        Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
       end
     end
   end

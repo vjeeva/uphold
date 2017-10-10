@@ -1,6 +1,8 @@
 module Uphold
   module Transports
     class Local < Transport
+      include DateHelper
+
       def initialize(params)
         super(params)
       end
@@ -22,6 +24,31 @@ module Uphold
           logger.fatal "No file exists at '#{file_path}'"
           nil
         end
+      end
+
+      def self.get_backup_paths(config)
+        # Regexes from dates in config
+        regexes = Uphold::Files.get_date_regexes_from_config(config)
+
+        # Top level folder path (without dates)
+        general_path = Uphold::Files.get_general_path(config, "/mount-#{config[:transport][:type]}-#{config[:name]}")
+
+        # Objective of any transport is to get the paths of relevant backups given the general path directory
+        # and the regexes to match with. Here, we first get all paths in the general directory
+        paths = []
+        Find.find(general_path) do |path|
+          paths << path
+        end
+
+        # Now, we filter the paths we got above with the regexes from dates
+        paths = Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
+
+        # Stripping out mount prefix
+        paths_stripped = []
+        paths.each do |path|
+          paths_stripped << path.gsub!("/mount-#{config[:transport][:type]}-#{config[:name]}", '')
+        end
+        paths_stripped
       end
 
     end
