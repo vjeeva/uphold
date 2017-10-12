@@ -50,6 +50,17 @@ module Uphold
       yaml
     end
 
+    # TODO: UPDATE AS NEEDED
+    def self.load_message_queues_config
+      yaml = YAML.load_file(File.join(PREFIX, 'message_queue.yml'))
+      yaml = deep_convert(yaml)
+      yaml[:type] ||= 'sqs'
+      if Config.message_queues.any? { |e| e[:name] == yaml[:type] }
+        yaml[:klass] = Config.message_queues.find { |e| e[:name] == yaml[:type] }[:klass]
+      end
+      yaml
+    end
+
     def self.load_engines
       [Dir["#{ROOT}/lib/engines/*.rb"], Dir[File.join(PREFIX, 'engines', '*.rb')]].flatten.uniq.sort.each do |file|
         require file
@@ -86,6 +97,25 @@ module Uphold
 
     def self.transports
       @transports ||= []
+    end
+
+    def self.load_message_queues
+      [Dir["#{ROOT}/lib/message_queues/*.rb"], Dir[File.join(PREFIX, 'message_queues', '*.rb')]].flatten.uniq.sort.each do |file|
+        require file
+        basename = File.basename(file, '.rb')
+        add_message_queue name: basename, klass: Object.const_get("Uphold::MessageQueues::#{File.basename(file, '.rb').capitalize}")
+      end
+    end
+
+    def self.message_queues
+      @message_queues ||= []
+    end
+
+    def self.add_message_queue(message_queue)
+      list = message_queues
+      list << message_queue
+      logger.debug "Loaded message queue #{message_queue[:klass]}"
+      list.uniq! { |e| e[:name] }
     end
 
     private

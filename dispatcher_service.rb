@@ -5,6 +5,8 @@ module Uphold
   Bundler.require(:default, :dispatcher)
   load 'environment.rb'
 
-  dispatcher = Dispatcher.new
+  Config.load_message_queues
+
+  dispatcher = Dispatcher.new(Config.load_message_queues_config)
   dispatcher.start
 end
