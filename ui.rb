@@ -94,7 +94,7 @@ module Uphold
 
     private
 
-    def start_docker_container(slug, timestamp)
+    def start_docker_container(slug, timestamp, config)
       if Docker::Image.exist?("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
         Docker::Image.get("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
       else
@@ -114,14 +114,28 @@ module Uphold
         volumes[without_protocol] = { "#{without_protocol}" => 'rw' }
       end
 
-      @container = Docker::Container.create(
-          'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
-          'Cmd' => [slug + '.yml'],
-          'Volumes' => volumes,
-          'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{slug}", "TARGET_DATE=#{timestamp}"]
-      )
+      # If trigger is local, run this.
+      if config[:trigger][:type] == 'local' or nil
+        @container = Docker::Container.create(
+            'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
+            'Cmd' => [slug + '.yml'],
+            'Volumes' => volumes,
+            'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{slug}", "TARGET_DATE=#{timestamp}"]
+        )
 
-      @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
+        @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
+      # Else if the trigger is external (URL) run this
+      elsif config[:trigger][:type] == 'external'
+        require 'net/http'
+
+        url = URI.parse(config[:trigger][:settings][:url])
+        req = Net::HTTP::Get.new(url.to_s)
+        res = Net::HTTP.start(url.host, url.port) {|http|
+          http.request(req)
+        }
+        logger.info 'Triggering External URL'
+        logger.info res.body
+      end
     end
 
     def logs
