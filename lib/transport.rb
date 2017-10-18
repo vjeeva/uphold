@@ -52,5 +52,13 @@ module Uphold
     def get_backup_paths
       fail "Your transport must implement the 'get_backup_paths' method"
     end
+
+    def get_logs
+      fail "Your transport must implement the 'get_logs' method"
+    end
+
+    def get_log
+      fail "Your transport must implement the 'get_log' method"
+    end
   end
 end

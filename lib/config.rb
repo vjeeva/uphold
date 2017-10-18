@@ -21,12 +21,14 @@ module Uphold
       valid = true
       valid = false unless Config.engines.any? { |e| e[:name] == @yaml[:engine][:type] }
       valid = false unless Config.transports.any? { |e| e[:name] == @yaml[:transport][:type] }
+      valid = false unless Config.transports.any? { |e| e[:name] == @yaml[:logs][:type] }
       valid
     end
 
     def supplement
       @yaml[:engine][:klass] = Config.engines.find { |e| e[:name] == @yaml[:engine][:type] }[:klass]
       @yaml[:transport][:klass] = Config.transports.find { |e| e[:name] == @yaml[:transport][:type] }[:klass]
+      @yaml[:logs][:klass] = Config.transports.find { |e| e[:name] == @yaml[:logs][:type] }[:klass]
       @yaml
     end
 

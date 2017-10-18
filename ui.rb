@@ -55,8 +55,14 @@ module Uphold
       redirect '/'
     end
 
-    get '/logs/:filename' do
-      @log = File.join('/var/log/uphold', params[:filename])
+    get '/logs/:filename/:config_file' do
+      config = nil
+      @configs.each do |cf|
+        if cf[:file] == params[:config_file]
+          config = cf
+        end
+      end
+      @log = config[:logs][:klass].get_log(config, params[:filename])
       erb :log
     end
 

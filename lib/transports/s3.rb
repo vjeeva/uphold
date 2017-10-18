@@ -52,6 +52,33 @@ module Uphold
         # Now, we filter the paths we got above with the regexes from dates
         Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
       end
+
+      def self.get_logs(config)
+        region = config[:logs][:settings][:region]
+        access_key_id = config[:logs][:settings][:access_key_id]
+        secret_access_key = config[:logs][:settings][:secret_access_key]
+        bucket = config[:logs][:settings][:bucket]
+        path = config[:logs][:settings][:path]
+
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        s3.list_objects(bucket: bucket, prefix: path).contents.select{|item| item.storage_class != 'GLACIER'}.collect(&:key).select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
+      end
+
+      def self.get_log(config, filename)
+        region = config[:logs][:settings][:region]
+        access_key_id = config[:logs][:settings][:access_key_id]
+        secret_access_key = config[:logs][:settings][:secret_access_key]
+        bucket = config[:logs][:settings][:bucket]
+        path = config[:logs][:settings][:path]
+
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        tmpdir = Dir.mktmpdir('log')
+        dir = File.join(tmpdir, filename)
+        File.open(dir, 'wb') do |file|
+          resp = s3.get_object({ bucket: bucket, key: filename }, target: file)
+        end
+        dir
+      end
     end
   end
 end
