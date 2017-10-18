@@ -13,7 +13,7 @@
           <% c[:backups].sort_by { |b| b[:date] }.reverse!.each do |backup| %>
             <% unless backup[:log] == nil %>
             <li>
-              <a title="<%= backup[:log][:state] %>" class="<%= backup[:log][:state] %>" href="logs/<%= backup[:log][:filename] %>"></a> <%= epoch_to_datetime(backup[:log][:epoch]) %>
+              <a title="<%= backup[:log][:state] %>" class="<%= backup[:log][:state] %>" href="logs/<%= c[:config_file] %>/<%= backup[:log][:filename] %>"></a> <%= epoch_to_datetime(backup[:log][:epoch]) %>
             </li>
             <% else %>
             <li>

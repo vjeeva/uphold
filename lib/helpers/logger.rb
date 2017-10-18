@@ -4,7 +4,7 @@ module Uphold
   module Logging
     class << self
       def logger
-        @logger ||= Logger.new("| tee /var/log/uphold/#{ENV['UPHOLD_LOG_FILENAME'].nil? ? 'uphold' : ENV['UPHOLD_LOG_FILENAME']}.log")
+        @logger ||= Logger.new("| tee #{ENV['UPHOLD_LOG_LOCATION']}/#{ENV['UPHOLD_LOG_FILENAME'].nil? ? 'uphold' : ENV['UPHOLD_LOG_FILENAME']}.log")
       end
 
       def logger=(logger)

@@ -51,18 +51,18 @@ module Uphold
     end
 
     get '/run/:slug/:date_epoch' do
-      start_docker_container(params[:slug], params[:date_epoch])
+      config = get_config_from_filename(params[:slug])
+      start_docker_container(config, params[:date_epoch])
       redirect '/'
     end
 
-    get '/logs/:filename/:config_file' do
-      config = nil
-      @configs.each do |cf|
-        if cf[:file] == params[:config_file]
-          config = cf
-        end
+    get '/logs/:config_file/:filename' do
+      config = get_config_from_filename(params[:config_file])
+      if config.key?(:logs)
+        @log = config[:logs][:klass].get_log(config)
+      else
+        @log = Uphold::Transports::Local.get_log(config)
       end
-      @log = config[:logs][:klass].get_log(config, params[:filename])
       erb :log
     end
 
@@ -80,7 +80,8 @@ module Uphold
     get '/api/1.0/backups/:name' do
       # get all the runs for the named config
       content_type :json
-      @logs = logs[params[:name]]
+      config = get_config_from_filename(params[:name])
+      @logs = logs(config)
       if @logs.nil?
         [].to_json
       else
@@ -90,7 +91,8 @@ module Uphold
 
     get '/api/1.0/backups/:name/latest' do
       # get the latest state for the named config
-      @logs = logs[params[:name]]
+      config = get_config_from_filename(params[:name])
+      @logs = logs(config)
       if @logs.nil?
         'none'
       else
@@ -100,7 +102,7 @@ module Uphold
 
     private
 
-    def start_docker_container(slug, timestamp, config)
+    def start_docker_container(config, timestamp)
       if Docker::Image.exist?("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
         Docker::Image.get("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
       else
@@ -121,12 +123,12 @@ module Uphold
       end
 
       # If trigger is local, run this.
-      if config[:trigger][:type] == 'local' or nil
+      if not config.key?(:trigger) or config[:trigger][:type] == 'local'
         @container = Docker::Container.create(
             'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
-            'Cmd' => [slug + '.yml'],
+            'Cmd' => [config[:file] + '.yml'],
             'Volumes' => volumes,
-            'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{slug}", "TARGET_DATE=#{timestamp}"]
+            'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{config[:file]}", "TARGET_DATE=#{timestamp}"]
         )
 
         @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
@@ -144,20 +146,18 @@ module Uphold
       end
     end
 
-    def logs
-      logs = {}
-      Uphold::Files.raw_test_logs.each do |log|
+    def logs(config_param)
+      logs = []
+      Uphold::Files.raw_test_logs(config_param).each do |log|
         epoch = log.split('_')[0]
         config = log.split('_')[1].gsub!('.log', '')
-        state = Uphold::Files.raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
+        state = Uphold::Files.raw_state_files(config_param).find { |s| s.include?("#{epoch}_#{config}") }
         if state
           state = state.gsub("#{epoch}_#{config}", '')[1..-1]
         else
           state = 'running'
         end
-        logs[config] ||= []
-        logs[config] << { epoch: epoch.to_i, state: state, filename: log }
-        logs[config].sort_by! { |h| h[:epoch].to_i }.reverse!
+        logs << { epoch: epoch.to_i, state: state, filename: log }
       end
       logs
     end
@@ -166,7 +166,7 @@ module Uphold
       log_backup_matchups_all = []
       @configs.each do |config|
         backup_paths = Uphold::Files.backups(config)
-        logss = logs[config[:file]]
+        logss = logs(config)
         backups = []
         backup_paths.each do |path|
           backup = {}
@@ -174,6 +174,8 @@ module Uphold
           backup[:backup] = path
           if logss != nil
             logss.each do |log|
+              logger.debug log
+              logger.debug backup
               if log[:epoch].to_s == backup[:date].strftime('%s').to_s
                 backup[:log] = log
               end
@@ -188,6 +190,16 @@ module Uphold
         log_backup_matchups_all << curr_config
       end
       log_backup_matchups_all
+    end
+
+    def get_config_from_filename(filename)
+      config = nil
+      @configs.each do |cf|
+        if cf[:file] == filename
+          config = cf
+        end
+      end
+      config
     end
 
   end

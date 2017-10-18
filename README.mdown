@@ -368,7 +368,7 @@ This setting determines if in the UI, when one runs a build, would it be run loc
 
 If wanting to trigger locally, the `type` just needs to be set to `local` and no other parameter is needed. If wanting to trigger an external build, we change the `type` to `external`, then the `url` to your url.
 
-NOTE: If trigger is unset, default will be local.
+NOTE: If trigger is unset, default will be `local`.
 
 Example (local):
 
@@ -388,7 +388,7 @@ This setting determines the log dump/retrieval location. Again referring to Auto
 
 If you want your logs dumped locally, the `location` just needs to be `local`. Otherwise, `location` just needs to be `s3`, same name as the transport class. Further parameters depends on the driver.
 
-NOTE: If logs is unset, default will be local in `/var/log/uphold`
+NOTE: If logs is unset, default will be `local` and in `/var/log/uphold`
 
 Example (local):
 
