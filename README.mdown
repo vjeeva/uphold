@@ -333,6 +333,8 @@ You can specify the username for accessing the postgres server (other than the d
         port: 5432
         sql_file: PostgreSQL.sql
         username: postgres
+        cores: 16
+        command_timeout: 7200 # Seconds is taken here
 
 #### Tests
 
@@ -366,7 +368,7 @@ Obviously this is just a simple test, but you can write any number of tests you 
 
 This setting determines if in the UI, when one runs a build, would it be run locally or dispatched to an outside URL? Referring to [Automation Tool Support](#automationtoolsupport), we can either run backups locally by dispatching a container from within the UI container (assuming the entire system runs on a single host machine), or we can trigger a build via URL for tools like Jenkins or TeamCity.
 
-If wanting to trigger locally, the `type` just needs to be set to `local` and no other parameter is needed. If wanting to trigger an external build, we change the `type` to `external`, then the `url` to your url.
+If wanting to trigger locally, the `type` just needs to be set to `local` and no other parameter is needed. If wanting to trigger an external build, we change the `type` to `external`, then the `url` to your url. This is set in your `conf.d` config YAML.
 
 NOTE: If trigger is unset, default will be `local`.
 
@@ -384,7 +386,7 @@ trigger:
 
 ### Logs
 
-This setting determines the log dump/retrieval location. Again referring to Automation Tool Support](#automationtoolsupport), we can either dump logs locally or to a remote location (eg: S3). Using the transport drivers supported, we can set this in the GLOBAL uphold YAML.
+This setting determines the log dump/retrieval location. Again referring to Automation Tool Support](#automationtoolsupport), we can either dump logs locally or to a remote location (eg: S3). Using the transport drivers supported, we can set this in the GLOBAL uphold YAML, `/etc/uphold/uphold.yml`.
 
 If you want your logs dumped locally, the `location` just needs to be `local`. Otherwise, `location` just needs to be `s3`, same name as the transport class. Further parameters depends on the driver.
 
@@ -407,7 +409,7 @@ logs:
     access_key_id: your-access-key-id
     secret_access_key: your-secret-access-key
     bucket: your-backup-logs
-    path: some/folders
+    path: some/folders # Note this is optional
     
 ### Running
 
