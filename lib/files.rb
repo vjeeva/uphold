@@ -9,21 +9,17 @@ module Uphold
       config[:transport][:klass].get_backup_paths(config)
     end
 
-    def self.raw_test_logs(config)
-      raw_files(config).select { |file| File.extname(file) == '.log' }
+    def self.raw_test_logs
+      raw_files.select { |file| File.extname(file) == '.log' }
     end
 
-    def self.raw_state_files(config)
-      raw_files(config).select { |file| File.extname(file) == '' }
+    def self.raw_state_files
+      raw_files.select { |file| File.extname(file) == '' }
     end
 
-    def self.raw_files(config)
-      # Need to switch between this, local or s3.
-      if config.key?(:logs)
-        config[:logs][:klass].get_logs(config)
-      else
-        Uphold::Transports::Local.get_logs(config)
-      end
+    def self.raw_files
+      # Need to switch between this and s3
+      UPHOLD[:logs][:klass].get_logs
     end
 
     def self.extract_datetime_from_backup_path(config, path)

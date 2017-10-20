@@ -51,14 +51,21 @@ module Uphold
         paths_stripped
       end
 
-      def self.get_logs(config)
-        path = config.key?(:logs) ? config[:logs][:settings][:path] : '/var/log/uphold'
-        Dir[File.join(path, '*')].select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
+      def self.get_logs
+        Dir[File.join(UPHOLD[:logs][:settings][:path], '*')].select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
       end
 
-      def self.get_log(config, filename)
-        path = config.key?(:logs) ? config[:logs][:settings][:path] : '/var/log/uphold'
-        File.join(path, filename)
+      def self.get_log(filename)
+        File.join(UPHOLD[:logs][:settings][:path], filename)
+      end
+
+      def self.dump_logs
+        logger.info "Logs are available locally at #{UPHOLD[:logs][:settings][:path]}, and if mounted correctly, on the host machine at this path."
+      end
+
+      def self.touch_state_file(state)
+        loc = UPHOLD[:logs][:settings][:path] || '/var/log/uphold'
+        FileUtils.touch(File.join(loc, ENV['UPHOLD_LOG_FILENAME'] + '_' + state)) unless ENV['UPHOLD_LOG_FILENAME'].nil?
       end
 
     end

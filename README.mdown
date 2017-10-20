@@ -384,11 +384,11 @@ trigger:
 
 ### Logs
 
-This setting determines the log dump/retrieval location. Again referring to Automation Tool Support](#automationtoolsupport), we can either dump logs locally or to a remote location (eg: S3). Using the transport drivers supported, we can set this in the config YAML.
+This setting determines the log dump/retrieval location. Again referring to Automation Tool Support](#automationtoolsupport), we can either dump logs locally or to a remote location (eg: S3). Using the transport drivers supported, we can set this in the GLOBAL uphold YAML.
 
 If you want your logs dumped locally, the `location` just needs to be `local`. Otherwise, `location` just needs to be `s3`, same name as the transport class. Further parameters depends on the driver.
 
-NOTE: If logs is unset, default will be `local` and in `/var/log/uphold`
+NOTE: If logs is unset, default will be `local` and in `/var/log/uphold`. Also, if the log location is NOT /var/log/uphold, then your run command for the UI container MUST change!
 
 Example (local):
 
@@ -398,7 +398,7 @@ logs:
     path: /var/log/uphold
 
 
-Example (s3) (yes you must enter your keys again, support for multi account AWS environments):
+Example (s3):
 
 logs:
   location: s3

@@ -56,13 +56,8 @@ module Uphold
       redirect '/'
     end
 
-    get '/logs/:config_file/:filename' do
-      config = get_config_from_filename(params[:config_file])
-      if config.key?(:logs)
-        @log = config[:logs][:klass].get_log(config)
-      else
-        @log = Uphold::Transports::Local.get_log(config)
-      end
+    get '/logs/:filename' do
+      @log = UPHOLD[:logs][:klass].get_log(params[:filename])
       erb :log
     end
 
@@ -80,8 +75,7 @@ module Uphold
     get '/api/1.0/backups/:name' do
       # get all the runs for the named config
       content_type :json
-      config = get_config_from_filename(params[:name])
-      @logs = logs(config)
+      @logs = logs[params[:name]]
       if @logs.nil?
         [].to_json
       else
@@ -91,8 +85,7 @@ module Uphold
 
     get '/api/1.0/backups/:name/latest' do
       # get the latest state for the named config
-      config = get_config_from_filename(params[:name])
-      @logs = logs(config)
+      @logs = logs[params[:name]]
       if @logs.nil?
         'none'
       else
@@ -130,7 +123,6 @@ module Uphold
             'Volumes' => volumes,
             'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{config[:file]}", "TARGET_DATE=#{timestamp}"]
         )
-
         @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
       # Else if the trigger is external (URL) run this
       elsif config[:trigger][:type] == 'external'
@@ -146,18 +138,20 @@ module Uphold
       end
     end
 
-    def logs(config_param)
-      logs = []
-      Uphold::Files.raw_test_logs(config_param).each do |log|
+    def logs
+      logs = {}
+      Uphold::Files.raw_test_logs.each do |log|
         epoch = log.split('_')[0]
         config = log.split('_')[1].gsub!('.log', '')
-        state = Uphold::Files.raw_state_files(config_param).find { |s| s.include?("#{epoch}_#{config}") }
+        state = Uphold::Files.raw_state_files.find { |s| s.include?("#{epoch}_#{config}") }
         if state
           state = state.gsub("#{epoch}_#{config}", '')[1..-1]
         else
           state = 'running'
         end
-        logs << { epoch: epoch.to_i, state: state, filename: log }
+        logs[config] ||= []
+        logs[config] << { epoch: epoch.to_i, state: state, filename: log }
+        logs[config].sort_by! { |h| h[:epoch].to_i }.reverse!
       end
       logs
     end
@@ -166,7 +160,7 @@ module Uphold
       log_backup_matchups_all = []
       @configs.each do |config|
         backup_paths = Uphold::Files.backups(config)
-        logss = logs(config)
+        logss = logs[config[:file]]
         backups = []
         backup_paths.each do |path|
           backup = {}
@@ -174,8 +168,6 @@ module Uphold
           backup[:backup] = path
           if logss != nil
             logss.each do |log|
-              logger.debug log
-              logger.debug backup
               if log[:epoch].to_s == backup[:date].strftime('%s').to_s
                 backup[:log] = log
               end

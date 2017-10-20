@@ -60,5 +60,13 @@ module Uphold
     def get_log
       fail "Your transport must implement the 'get_log' method"
     end
+
+    def dump_logs
+      fail "Your transport must implement the 'dump_logs' method"
+    end
+
+    def touch_state_file
+      fail "Your transport must implement the 'touch_state_file' method"
+    end
   end
 end
