@@ -96,6 +96,8 @@ Create a global config in `/etc/uphold/uphold.yml` (even if you leave it empty),
 
 * `log_level` (default: `DEBUG`)
   * You can decrease the verbosity of the logging by changing this to `INFO`, but not recommended
+* `backup_tmp_path` (default: `/etc/uphold/tmp`)
+  * If you need to override this you can, used for when eg: S3 backups are downloaded onto the HOST machine so it can be mounted in the engine.
 * `config_path` (default: `/etc/uphold`)
   * Generally only overridden in development on OSX when you need to mount your own src directory
 * `docker_log_path` (default: `/var/log/uphold`)
@@ -116,6 +118,7 @@ If you change the global config you will need to restart the UI docker container
 #### `uphold.yml` Example
 
     log_level: DEBUG
+    backup_tmp_path: /etc/uphold/tmp
     config_path: /etc/uphold
     docker_log_path: /var/log/uphold
     docker_url: unix:///var/run/docker.sock
@@ -471,7 +474,7 @@ To have your tool of choice run a tester container, it will need to do the follo
 - Retrieve the relevant `conf.d` YAML file for the backup being run
 - Retrieve timestamp for the backup that is being targeted (in Unix format)
 - Copy the `conf.d` YAML file into `/etc/uphold/conf.d/` on the agent machine
-- Create and run the tester container (if default, use `vjeeva/uphold-tester`) with the local mount `/etc/uphold` (and `/var/log/uphold` if you plan to keep your logs on the agent only)
+- Create and run the tester container (if default, use `vjeeva/uphold-tester`) with the local mount `/etc/uphold` (and `/var/log/uphold` if you plan to keep your logs on the agent only), and `/etc/uphold/tmp` unless specified differently in your global YAML for tmp backups, and any and all mounts in `docker_mounts`
 - Do the appropriate cleanup
 
 ### Development

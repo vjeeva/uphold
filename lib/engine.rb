@@ -16,6 +16,7 @@ module Uphold
       @container = nil
       @port = nil
       @extension = params[:extension]
+      @username ||= params[:username]
     end
 
     def load(path:, container:)
@@ -92,6 +93,10 @@ module Uphold
 
     def container_name
       File.basename @container.json['Name']
+    end
+
+    def user
+      @username
     end
 
     def stop_container

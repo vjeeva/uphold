@@ -104,6 +104,7 @@ module Uphold
 
       volumes = {}
       UPHOLD[:docker_mounts].flatten.each { |m| volumes[m] = { "#{m}" => 'ro' } }
+      volumes[UPHOLD[:backup_tmp_path]] = { UPHOLD[:backup_tmp_path] => 'rw' }
 
       # this is a hack for when you're working in development on osx
       volumes[UPHOLD[:config_path]] = { '/etc/uphold' => 'ro' }

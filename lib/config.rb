@@ -40,6 +40,7 @@ module Uphold
       yaml = YAML.load_file(File.join(PREFIX, 'uphold.yml'))
       yaml = deep_convert(yaml)
       yaml[:log_level] ||= 'DEBUG'
+      yaml[:backup_tmp_path] ||= '/etc/uphold/tmp'
       yaml[:docker_url] ||= 'unix:///var/run/docker.sock'
       yaml[:docker_container] ||= 'vjeeva/uphold-tester'
       yaml[:docker_tag] ||= 'latest'
