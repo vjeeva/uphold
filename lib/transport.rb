@@ -7,9 +7,7 @@ module Uphold
     attr_reader :tmpdir
 
     def initialize(params)
-      Dir.chdir(UPHOLD[:backup_tmp_path]) do
-        @tmpdir = Dir.mktmpdir
-      end
+      @tmpdir = Dir.mktmpdir(nil, UPHOLD[:backup_tmp_path])
       @path = params[:path]
       @filename = params[:filename]
       @folder_within = params[:folder_within]
