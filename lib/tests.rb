@@ -3,11 +3,12 @@ module Uphold
     include Logging
     include Command
 
-    def initialize(ip_address:, port:, database:, tests:)
+    def initialize(ip_address:, port:, database:, tests:, user:)
       @ip_address = ip_address
       @port = port
       @database = database
       @tests = tests
+      @user = user
     end
 
     def run
@@ -15,7 +16,7 @@ module Uphold
       t1 = Time.now
 
       outcomes = @tests.collect do |t|
-        process = run_command("UPHOLD_IP=#{@ip_address} UPHOLD_PORT=#{@port} UPHOLD_DB=#{@database} ruby /etc/uphold/tests/#{t}", 'ruby')
+        process = run_command("UPHOLD_IP=#{@ip_address} UPHOLD_PORT=#{@port} UPHOLD_DB=#{@database} UPHOLD_USER=#{@user} ruby /etc/uphold/tests/#{t}", 'ruby')
         if process.success?
           logger.info "Test #{t} finished successfully"
           true

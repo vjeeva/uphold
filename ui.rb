@@ -51,12 +51,13 @@ module Uphold
     end
 
     get '/run/:slug/:date_epoch' do
-      start_docker_container(params[:slug], params[:date_epoch])
+      config = get_config_from_filename(params[:slug])
+      start_docker_container(config, params[:date_epoch])
       redirect '/'
     end
 
     get '/logs/:filename' do
-      @log = File.join('/var/log/uphold', params[:filename])
+      @log = UPHOLD[:logs][:klass].get_log(params[:filename])
       erb :log
     end
 
@@ -94,7 +95,7 @@ module Uphold
 
     private
 
-    def start_docker_container(slug, timestamp)
+    def start_docker_container(config, timestamp)
       if Docker::Image.exist?("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
         Docker::Image.get("#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}")
       else
@@ -103,6 +104,7 @@ module Uphold
 
       volumes = {}
       UPHOLD[:docker_mounts].flatten.each { |m| volumes[m] = { "#{m}" => 'ro' } }
+      volumes[UPHOLD[:backup_tmp_path]] = { UPHOLD[:backup_tmp_path] => 'rw' }
 
       # this is a hack for when you're working in development on osx
       volumes[UPHOLD[:config_path]] = { '/etc/uphold' => 'ro' }
@@ -114,14 +116,27 @@ module Uphold
         volumes[without_protocol] = { "#{without_protocol}" => 'rw' }
       end
 
-      @container = Docker::Container.create(
-          'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
-          'Cmd' => [slug + '.yml'],
-          'Volumes' => volumes,
-          'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{slug}", "TARGET_DATE=#{timestamp}"]
-      )
+      # If trigger is local, run this.
+      if not config.key?(:trigger) or config[:trigger][:type] == 'local'
+        @container = Docker::Container.create(
+            'Image' => "#{UPHOLD[:docker_container]}:#{UPHOLD[:docker_tag]}",
+            'Cmd' => [config[:file] + '.yml'],
+            'Volumes' => volumes,
+            'Env' => ["UPHOLD_LOG_FILENAME=#{timestamp}_#{config[:file]}", "TARGET_DATE=#{timestamp}"]
+        )
+        @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
+      # Else if the trigger is external (URL) run this
+      elsif config[:trigger][:type] == 'external'
+        require 'net/http'
 
-      @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
+        url = URI.parse(config[:trigger][:settings][:url])
+        req = Net::HTTP::Get.new(url.to_s)
+        res = Net::HTTP.start(url.host, url.port) {|http|
+          http.request(req)
+        }
+        logger.info 'Triggering External URL'
+        logger.info res.body
+      end
     end
 
     def logs
@@ -168,6 +183,16 @@ module Uphold
         log_backup_matchups_all << curr_config
       end
       log_backup_matchups_all
+    end
+
+    def get_config_from_filename(filename)
+      config = nil
+      @configs.each do |cf|
+        if cf[:file] == filename
+          config = cf
+        end
+      end
+      config
     end
 
   end

@@ -40,6 +40,7 @@ module Uphold
       yaml = YAML.load_file(File.join(PREFIX, 'uphold.yml'))
       yaml = deep_convert(yaml)
       yaml[:log_level] ||= 'DEBUG'
+      yaml[:backup_tmp_path] ||= '/etc/uphold/tmp'
       yaml[:docker_url] ||= 'unix:///var/run/docker.sock'
       yaml[:docker_container] ||= 'vjeeva/uphold-tester'
       yaml[:docker_tag] ||= 'latest'
@@ -47,6 +48,10 @@ module Uphold
       yaml[:config_path] ||= '/etc/uphold'
       yaml[:docker_log_path] ||= '/var/log/uphold'
       yaml[:ui_datetime] ||= '%F %T %Z'
+      yaml[:logs] ||= { :type => 'local', :settings => { :path => '/var/log/uphold' } }
+      load_transports_no_logger
+      fail unless Config.transports.any? { |e| e[:name] == yaml[:logs][:type] }
+      yaml[:logs][:klass] = Config.transports.find { |e| e[:name] == yaml[:logs][:type] }[:klass]
       yaml
     end
 
@@ -77,10 +82,24 @@ module Uphold
       end
     end
 
+    def self.load_transports_no_logger
+      [Dir["#{ROOT}/lib/transports/*.rb"], Dir[File.join(PREFIX, 'transports', '*.rb')]].flatten.uniq.sort.each do |file|
+        require file
+        basename = File.basename(file, '.rb')
+        add_transport_no_logger name: basename, klass: Object.const_get("Uphold::Transports::#{File.basename(file, '.rb').capitalize}")
+      end
+    end
+
     def self.add_transport(transport)
       list = transports
       list << transport
       logger.debug "Loaded transport #{transport[:klass]}"
+      list.uniq! { |e| e[:name] }
+    end
+
+    def self.add_transport_no_logger(transport)
+      list = transports
+      list << transport
       list.uniq! { |e| e[:name] }
     end
 

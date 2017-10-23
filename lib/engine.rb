@@ -3,6 +3,7 @@ module Uphold
     include Logging
     include Command
     include Sockets
+    Result = Struct.new(:success?, :stdout, :stderr)
 
     attr_reader :port, :database
 
@@ -15,19 +16,24 @@ module Uphold
       @container = nil
       @port = nil
       @extension = params[:extension]
+      @username ||= params[:username]
     end
 
-    def load(path:)
+    def load(path:, container:)
       logger.info "Engine starting #{self.class}"
       t1 = Time.now
-      process = load_backup(path)
+      process = load_backup(path, container)
       t2 = Time.now
       delta = t2 - t1
       if process.success?
         logger.info "Engine finished successfully (#{format('%.2f', delta)}s)"
+        logger.debug process.stdout
+        logger.error process.stderr
         true
       else
         logger.error "Engine failed! (#{format('%.2f', delta)}s)"
+        logger.debug process.stdout
+        logger.error process.stderr
         false
       end
     rescue => e
@@ -39,7 +45,7 @@ module Uphold
       fail "Your engine must implement the 'load_backup' method"
     end
 
-    def start_container
+    def start_container(backup_dir)
       if Docker::Image.exist?("#{@docker_image}:#{@docker_tag}")
         logger.debug "Docker image '#{@docker_image}' with tag '#{@docker_tag}' available"
         Docker::Image.get("#{@docker_image}:#{@docker_tag}")
@@ -48,17 +54,28 @@ module Uphold
         Docker::Image.create('fromImage' => @docker_image, 'tag' => @docker_tag)
       end
 
+      volumes = {}
+      UPHOLD[:docker_mounts].flatten.each { |m| volumes[m] = { "#{m}" => 'ro' } }
+      if not backup_dir.nil?
+        volumes[backup_dir] = { "#{backup_dir}" => 'ro'}
+      end
+
       @container = Docker::Container.create(
         'Image' => "#{@docker_image}:#{@docker_tag}",
-        'Env' => @docker_env
+        'Env' => @docker_env,
+        'Volumes' => volumes
       )
-      @container.start
+      @container.start('Binds' => volumes.map { |v, h| "#{v}:#{h.keys.first}" })
       logger.debug "Docker container '#{container_name}' starting"
       wait_for_container_to_be_ready
     rescue => e
       touch_state_file('bad_engine')
       logger.info 'Backup is BAD'
       raise e
+    end
+
+    def get_container
+      @container
     end
 
     def wait_for_container_to_be_ready
@@ -78,10 +95,14 @@ module Uphold
       File.basename @container.json['Name']
     end
 
+    def user
+      @username
+    end
+
     def stop_container
       logger.debug "Docker container '#{container_name}' stopping"
       @container.stop
-      @container.delete
+      # @container.delete
     end
 
     def get_backups
@@ -90,6 +111,14 @@ module Uphold
         exit 1
       end
       @files.get_backups
+    end
+
+    def result(res)
+      if res[2] == 0
+        Result.new(true, res[0], res[1])
+      else
+        Result.new(false, res[0], res[1])
+      end
     end
 
   end

@@ -52,6 +52,61 @@ module Uphold
         # Now, we filter the paths we got above with the regexes from dates
         Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
       end
+
+      def self.get_logs
+        region = UPHOLD[:logs][:settings][:region]
+        access_key_id = UPHOLD[:logs][:settings][:access_key_id]
+        secret_access_key = UPHOLD[:logs][:settings][:secret_access_key]
+        bucket = UPHOLD[:logs][:settings][:bucket]
+        path = UPHOLD[:logs][:settings][:path]
+
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        s3.list_objects(bucket: bucket, prefix: path).contents.select{|item| item.storage_class != 'GLACIER'}.collect(&:key).select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
+      end
+
+      def self.get_log(filename)
+        region = UPHOLD[:logs][:settings][:region]
+        access_key_id = UPHOLD[:logs][:settings][:access_key_id]
+        secret_access_key = UPHOLD[:logs][:settings][:secret_access_key]
+        bucket = UPHOLD[:logs][:settings][:bucket]
+
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        tmpdir = Dir.mktmpdir('log')
+        dir = File.join(tmpdir, filename)
+        File.open(dir, 'wb') do |file|
+          resp = s3.get_object({ bucket: bucket, key: filename }, target: file)
+        end
+        dir
+      end
+
+      def self.dump_logs
+        region = UPHOLD[:logs][:settings][:region]
+        access_key_id = UPHOLD[:logs][:settings][:access_key_id]
+        secret_access_key = UPHOLD[:logs][:settings][:secret_access_key]
+        bucket = UPHOLD[:logs][:settings][:bucket]
+
+        # IF the logs dump to s3, then logger will default to /var/log/uphold on the local machine/container, so we copy that file to S3.
+
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        File.open("/var/log/uphold/#{ENV['UPHOLD_LOG_FILENAME']}.log", 'rb') do |file|
+          s3.put_object(bucket: bucket, key: "#{ENV['UPHOLD_LOG_FILENAME']}.log", body: file)
+        end
+      end
+
+      def self.touch_state_file(state)
+        region = UPHOLD[:logs][:settings][:region]
+        access_key_id = UPHOLD[:logs][:settings][:access_key_id]
+        secret_access_key = UPHOLD[:logs][:settings][:secret_access_key]
+        bucket = UPHOLD[:logs][:settings][:bucket]
+
+        loc = UPHOLD[:logs][:settings][:path] || '/var/log/uphold'
+        s3 = Aws::S3::Client.new(region: region, access_key_id: access_key_id, secret_access_key: secret_access_key)
+        FileUtils.touch(File.join(loc, ENV['UPHOLD_LOG_FILENAME'] + '_' + state)) unless ENV['UPHOLD_LOG_FILENAME'].nil?
+        File.open("/var/log/uphold/#{ENV['UPHOLD_LOG_FILENAME']}_#{state}", 'rb') do |file|
+          s3.put_object(bucket: bucket, key: "#{ENV['UPHOLD_LOG_FILENAME']}_#{state}", body: file)
+        end
+      end
+
     end
   end
 end

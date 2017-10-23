@@ -3,3 +3,4 @@ docker_clean.sh
 build_n_push.sh
 .idea/
 ec2-configs/
+dockerfiles/postgres/

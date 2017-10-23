@@ -7,7 +7,7 @@ module Uphold
     attr_reader :tmpdir
 
     def initialize(params)
-      @tmpdir = Dir.mktmpdir('uphold')
+      @tmpdir = Dir.mktmpdir(nil, UPHOLD[:backup_tmp_path])
       @path = params[:path]
       @filename = params[:filename]
       @folder_within = params[:folder_within]
@@ -51,6 +51,22 @@ module Uphold
 
     def get_backup_paths
       fail "Your transport must implement the 'get_backup_paths' method"
+    end
+
+    def get_logs
+      fail "Your transport must implement the 'get_logs' method"
+    end
+
+    def get_log
+      fail "Your transport must implement the 'get_log' method"
+    end
+
+    def dump_logs
+      fail "Your transport must implement the 'dump_logs' method"
+    end
+
+    def touch_state_file
+      fail "Your transport must implement the 'touch_state_file' method"
     end
   end
 end

@@ -17,15 +17,17 @@ module Uphold
 
       begin
         working_path = transport.fetch
-        unless engine.start_container
+        unless engine.start_container(working_path)
           touch_state_file('bad_engine')
           logger.info 'Backup is BAD'
           exit 0
         end
 
-        if engine.load(path: working_path)
+        container = engine.get_container
+
+        if engine.load(path: working_path, container: container)
           if @config[:tests].any?
-            tests = Tests.new(tests: @config[:tests], ip_address: engine.container_ip_address, port: engine.port, database: engine.database)
+            tests = Tests.new(tests: @config[:tests], ip_address: engine.container_ip_address, port: engine.port, database: engine.database, user: engine.user)
             if tests.run
               touch_state_file('ok')
               logger.info 'Backup is OK'
@@ -56,6 +58,7 @@ module Uphold
         t2 = Time.now
         delta = t2 - t1
         logger.info "Done! (#{format('%.2f', delta)}s)"
+        UPHOLD[:logs][:klass].dump_logs
       end
     end
   end

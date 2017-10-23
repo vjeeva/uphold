@@ -14,7 +14,7 @@ module Uphold
         @files = Files.new(params)
       end
 
-      def load_backup(path)
+      def load_backup(path, container)
         Dir.chdir(path) do
           run_command("mysql -u root --host=#{container_ip_address} --port=#{@port} #{@database} < #{@sql_file}")
         end

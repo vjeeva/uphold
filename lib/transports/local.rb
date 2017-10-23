@@ -10,15 +10,15 @@ module Uphold
       def fetch_backup
         file_path = File.join(@path, @filename)
         if File.file?(file_path)
-          tmp_path = File.join(@tmpdir, File.basename(file_path))
-          logger.info "Copying '#{file_path}' to '#{tmp_path}'"
-          FileUtils.cp(file_path, tmp_path)
-	        if @compressed
+          if @compressed
+            tmp_path = File.join(@tmpdir, File.basename(file_path))
+            logger.info "Copying '#{file_path}' to '#{tmp_path}'"
+            FileUtils.cp(file_path, tmp_path)
             decompress(tmp_path) do |_b|
             end
             File.join(@tmpdir, @folder_within)
           else
-	          @tmpdir
+            @path
           end
         else
           logger.fatal "No file exists at '#{file_path}'"
@@ -49,6 +49,23 @@ module Uphold
           paths_stripped << path.gsub!("/mount-#{config[:transport][:type]}-#{config[:name]}", '')
         end
         paths_stripped
+      end
+
+      def self.get_logs
+        Dir[File.join(UPHOLD[:logs][:settings][:path], '*')].select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
+      end
+
+      def self.get_log(filename)
+        File.join(UPHOLD[:logs][:settings][:path], filename)
+      end
+
+      def self.dump_logs
+        logger.info "Logs are available locally at #{UPHOLD[:logs][:settings][:path]}, and if mounted correctly, on the host machine at this path."
+      end
+
+      def self.touch_state_file(state)
+        loc = UPHOLD[:logs][:settings][:path] || '/var/log/uphold'
+        FileUtils.touch(File.join(loc, ENV['UPHOLD_LOG_FILENAME'] + '_' + state)) unless ENV['UPHOLD_LOG_FILENAME'].nil?
       end
 
     end

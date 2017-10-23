@@ -18,7 +18,8 @@ module Uphold
     end
 
     def self.raw_files
-      Dir[File.join('/var/log/uphold', '*')].select { |log| File.basename(log) =~ /^[0-9]{10}/ }.map { |file| File.basename(file) }
+      # Need to switch between this and s3
+      UPHOLD[:logs][:klass].get_logs
     end
 
     def self.extract_datetime_from_backup_path(config, path)
