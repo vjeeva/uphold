@@ -16,7 +16,13 @@ module Uphold
       t1 = Time.now
 
       outcomes = @tests.collect do |t|
-        process = run_command("UPHOLD_IP=#{@ip_address} UPHOLD_PORT=#{@port} UPHOLD_DB=#{@database} UPHOLD_USER=#{@user} ruby /etc/uphold/tests/#{t}", 'ruby')
+        lang = nil
+        if File.extname(t) == '.rb'
+          lang = 'ruby'
+        elsif File.extname(t) == '.py'
+          lang = 'python'
+        end
+        process = run_command("UPHOLD_IP=#{@ip_address} UPHOLD_PORT=#{@port} UPHOLD_DB=#{@database} UPHOLD_USER=#{@user} #{lang} /etc/uphold/tests/#{t}", lang)
         if process.success?
           logger.info "Test #{t} finished successfully"
           true

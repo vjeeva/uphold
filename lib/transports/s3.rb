@@ -39,7 +39,7 @@ module Uphold
         bucket = config[:transport][:settings][:bucket]
 
         # Regexes from dates in config
-        regexes = Uphold::Files.get_date_regexes_from_config(config)
+        regexes = Uphold::Files.get_regexes_from_config(config)
 
         # Top level folder path (without dates)
         general_path = Uphold::Files.get_general_path(config, '') # Ensure to pass empty string for no prefix
@@ -50,7 +50,16 @@ module Uphold
         paths = s3.list_objects(bucket: bucket, prefix: general_path).contents.select{|item| item.storage_class != 'GLACIER'}.collect(&:key)
 
         # Now, we filter the paths we got above with the regexes from dates
-        Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
+        paths = Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
+        array = []
+
+        paths.each do |path|
+          d = {}
+          d[:backup] = path
+          d[:date] = Files.extract_datetime_from_backup_path(config, path)
+          array << d
+        end
+        array
       end
 
       def self.get_logs

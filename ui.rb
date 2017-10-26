@@ -160,13 +160,13 @@ module Uphold
     def backups_with_logs
       log_backup_matchups_all = []
       @configs.each do |config|
-        backup_paths = Uphold::Files.backups(config)
+        backups = config[:transport][:klass].backups(config)
         logss = logs[config[:file]]
-        backups = []
-        backup_paths.each do |path|
+        backups_with_logs = []
+        backups.each do |bk|
           backup = {}
-          backup[:date] = Files.extract_datetime_from_backup_path(config, path)
-          backup[:backup] = path
+          backup[:date] = bk[:date]
+          backup[:backup] = bk[:backup]
           if logss != nil
             logss.each do |log|
               if log[:epoch].to_s == backup[:date].strftime('%s').to_s
@@ -174,12 +174,12 @@ module Uphold
               end
             end
           end
-          backups << backup
+          backups_with_logs << backup
         end
         curr_config = {}
         curr_config[:config_file] = config[:file]
         curr_config[:config_name] = config[:name]
-        curr_config[:backups] = backups
+        curr_config[:backups] = backups_with_logs
         log_backup_matchups_all << curr_config
       end
       log_backup_matchups_all

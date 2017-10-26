@@ -4,11 +4,6 @@ module Uphold
     include DateHelper
     require 'find'
 
-    def self.backups(config)
-      # Fuck me this assumes uncompressed...
-      config[:transport][:klass].get_backup_paths(config)
-    end
-
     def self.raw_test_logs
       raw_files.select { |file| File.extname(file) == '.log' }
     end
@@ -46,13 +41,20 @@ module Uphold
       general_path
     end
 
-    def self.get_date_regexes_from_config(config)
+    def self.get_regexes_from_config(config)
       regexes = []
-      config[:transport][:settings][:dates].each do |date|
-        # GOT IT: Need to stop removing {dateX} because there are outliers in the s3 bucket that don't conform. Need
-        # better verification. Instead of this crap, sub in the dates with a regex!!!! THATS WHAT ITS FOR OMG LOL
-        date_format = date[:date_format] || '%Y-%m-%d'
-        regexes << DateHelper.regex_from_posix(date_format).to_s
+      if config[:transport][:settings][:dates] != nil
+        config[:transport][:settings][:dates].each do |date|
+          # GOT IT: Need to stop removing {dateX} because there are outliers in the s3 bucket that don't conform. Need
+          # better verification. Instead of this crap, sub in the dates with a regex!!!! THATS WHAT ITS FOR OMG LOL
+          date_format = date[:date_format] || '%Y-%m-%d'
+          regexes << DateHelper.regex_from_posix(date_format).to_s
+        end
+      end
+      if config[:transport][:settings][:regexes] != nil
+        config[:transport][:settings][:regexes].each do |regex|
+          regexes << regex[:pattern]
+        end
       end
       regexes
     end

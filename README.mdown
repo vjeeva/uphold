@@ -166,7 +166,15 @@ Each config is in YAML format, and is constructed of a transport, an engine and 
 * `name`
   * Just so that if it's referenced anywhere, you have a nicer name
 
-See the sections below for how to configure Engines, Transports and Tests.
+Note that dates can be changed to regexes instead. So in the `dates` section, it can be changed to the following:
+    
+    path: mongodb/systemx/{reg0}
+    filename: mongodb_{reg1}.tar
+      regexes:
+      - pattern: '[a-z0-9]'
+      - pattern: '[0-9]{4}'
+
+See the sections below for how to configure Engines, Transports, Tests, Triggers and Logs.
 
 #### Transports
 

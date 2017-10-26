@@ -28,7 +28,7 @@ module Uphold
 
       def self.get_backup_paths(config)
         # Regexes from dates in config
-        regexes = Uphold::Files.get_date_regexes_from_config(config)
+        regexes = Uphold::Files.get_regexes_from_config(config)
 
         # Top level folder path (without dates)
         general_path = Uphold::Files.get_general_path(config, "/mount-#{config[:transport][:type]}-#{config[:name]}")
@@ -43,12 +43,15 @@ module Uphold
         # Now, we filter the paths we got above with the regexes from dates
         paths = Uphold::Files.get_paths_matching_regexes(paths, regexes, config[:engine][:settings][:extension])
 
-        # Stripping out mount prefix
-        paths_stripped = []
+        # Stripping out mount prefix and adding date key
+        array = []
         paths.each do |path|
-          paths_stripped << path.gsub!("/mount-#{config[:transport][:type]}-#{config[:name]}", '')
+          d = {}
+          d[:backup] = path.gsub!("/mount-#{config[:transport][:type]}-#{config[:name]}", '')
+          d[:date] = Files.extract_datetime_from_backup_path(config, path)
+          array << d
         end
-        paths_stripped
+        array
       end
 
       def self.get_logs

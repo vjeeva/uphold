@@ -13,6 +13,9 @@ RUN \
   apt-get autoremove -y && apt-get clean && \
   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN apt-get -y update && apt-get install -y daemontools python3-dev lzop pv python3-pip
+RUN python3 -m pip install wal-e[aws]
+
 COPY lib /opt/uphold/lib
 COPY public /opt/uphold/public
 COPY views /opt/uphold/views

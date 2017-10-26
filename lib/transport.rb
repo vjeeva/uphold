@@ -12,14 +12,27 @@ module Uphold
       @filename = params[:filename]
       @folder_within = params[:folder_within]
       @dates = params[:dates]
+      @regexes = params[:regexes]
       @compressed = params[:compressed]
 
-      @dates.each_with_index do |date_settings, index|
-        date_format = date_settings[:date_format] || '%Y-%m-%d'
-	      date_string = "{date" + index.to_s + "}"
-        date = DateTime.strptime(ENV['TARGET_DATE'].to_s, '%s')
-        @path.gsub!(date_string, date.strftime(date_format))
-        @filename.gsub!(date_string, date.strftime(date_format))
+      if @dates != nil
+        @dates.each_with_index do |date_settings, index|
+          date_format = date_settings[:date_format] || '%Y-%m-%d'
+          date_string = "{date" + index.to_s + "}"
+          date = DateTime.strptime(ENV['TARGET_DATE'].to_s, '%s')
+          @path.gsub!(date_string, date.strftime(date_format))
+          @filename.gsub!(date_string, date.strftime(date_format))
+        end
+      end
+
+      if @regexes != nil
+        @regexes.each_with_index do |regex, index|
+          date_format = regex[:pattern]
+          date_string = "{reg" + index.to_s + "}"
+          date = DateTime.strptime(ENV['TARGET_DATE'].to_s, '%s')
+          @path.gsub!(date_string, date.strftime(date_format))
+          @filename.gsub!(date_string, date.strftime(date_format))
+        end
       end
 
     end
